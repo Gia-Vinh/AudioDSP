@@ -26,3 +26,9 @@ def downsampleAudio(inputFile, M):
         	M: downsampling factor (positive integer)
     """
     ## Your code here
+    (fs, x) = wavread(inputFile)
+    ##Start downsampling
+    x = x[::M]
+    ##New sampling rate
+    fs = fs/float(M)
+    wavwrite(x,fs,'output_downsampled.wav')

@@ -1,0 +1,9 @@
+import numpy as np
+
+X = np.array([])
+
+for k in range (N):
+	s = np.exp(ij*2*pi*k/N*np.arange(N)
+	X = np.append(X,sum(x*conjugate(s)))
+	
+	
