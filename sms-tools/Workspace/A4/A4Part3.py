@@ -82,4 +82,37 @@ def computeEngEnv(inputFile, window, M, N, H):
     """
     
     ### your code here
+    #get wav file and sampling rate from input File
+    (fs, x) = UF.wavread(inputFile)
+    
+    #get window for STFT
+    w = get_window(window, M, False)
+    
+    #Compute magnitude spectra
+    xmX, _ = stft.stftAnal(x, w, N, H)
+    
+    #Convert the magnitude spectra from dB to linear scale
+    xmX = 10 ** (xmX/20)
+    
+    #Find the border between log and high freq.
+    lowFreq_threshold = 3000
+    highFreq_threshold = 10000
+    lowFreq_bin = lowFreq_threshold * N / fs
+    highFreq_bin = highFreq_threshold * N / fs
+    
+    #compute the energy envelops
+    #initialize the Enegey evenlope
+    engEnvLow = np.array([])
+    engEnvHigh = np.array([])
+    
+    #interate through ever frame to calculate the respected energy band, exclude the lower boundary of each
+    #band. Also convert to dB scale
+    for mX in xmX:
+        engEnvLow = np.append(engEnvLow,  10 * np.log10(sum(mX[1:lowFreq_bin+1] ** 2)))
+        engEnvHigh = np.append(engEnvHigh, 10* np.log10(sum(mX[lowFreq_bin+1:highFreq_bin+1] ** 2)))
+           
+    engEnv = np.array([engEnvLow, engEnvHigh])
+    
+    return np.transpose(engEnv)
+    
     

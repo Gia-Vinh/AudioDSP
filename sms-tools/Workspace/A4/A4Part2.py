@@ -60,3 +60,24 @@ def computeSNR(inputFile, window, M, N, H):
             SNR1 and SNR2 are floats.
     """
     ## your code here
+    (fs, x) = UF.wavread(inputFile)                       #get wav file from inputFile
+    w = get_window(window, M,False)                    #get window 
+    
+    #Apply STFT analysis and reconstruction
+    y = stft.stft(x, w, N, H)
+    
+    #Compute SNR for y x
+    noiseYX = abs(y-x)                                                  #calcuate noise between y and x
+    noiseYX_E = sum(noiseYX**2)                                 #calcualte enegery of noise
+    signal_E = sum(x**2)                                                #calcuate energy of signal
+    SNR_YX = 10*np.log10(signal_E / noiseYX_E)          #calcuate signal to noise ratio
+    
+    #Compute SNR for segment of x and y
+    x_seg = x[M:x.size-M]
+    y_seg = y[M:y.size-M]
+    noiseYXseg = abs(y_seg - x_seg)
+    noiseYXseg_E = sum(noiseYXseg**2)
+    signal_seg_E = sum(x_seg**2)
+    SNR_YXseg = 10*np.log10(signal_seg_E/noiseYXseg_E)
+    
+    return (SNR_YX, SNR_YXseg)

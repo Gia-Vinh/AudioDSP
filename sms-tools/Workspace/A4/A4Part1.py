@@ -58,7 +58,36 @@ def extractMainLobe(window, M):
             spectrum of the window in decibels (dB).
     """
 
-    w = get_window(window, M)         # get the window 
+    w = get_window(window, M)                   # get the window
     
     ### Your code here
+    N = 8*M                                                 #get fft size
     
+    #Construct the FFT buffer
+    fftbuffer = np.zeros(N)
+    fftbuffer[:M] = w[:M]
+    
+    #Apply FFT and shift the zero freq. component to the middle of the array
+    W = fft(fftbuffer)
+    W = fftshift(W)
+    #Get the magnitude spectrume
+    mW = abs(W)
+    mW = mW + eps                                   #add small offset to prevent log10(0) case
+    mW = 20 * np.log10(mW)                      #Convert to dB scale
+    
+    """Since the main lobe is always in the middle, it is safe to jump into the middle of the spectrum
+    then start to find the local minima. In addition, our window is a real funciton, so the spectrum is symmetry.
+    => only search the local minimum in the positive (+) direction
+    """
+    MLP = N/2                                       #MLP = main lobe peak
+    localMinIndex = 1                             #Initialize the localMinIndex to be next to MLP, the correct localMIn 
+                                                           #will be the one smaler than its two neighbors
+    while (mW[MLP+ localMinIndex]<= mW[MLP+localMinIndex-1])  \
+    and  \
+    (mW[MLP+ localMinIndex] >= mW[MLP+localMinIndex+1]):
+        localMinIndex += 1
+        
+    #return the whole mainLobe
+    mainLobe = mW[MLP-localMinIndex:MLP+localMinIndex+1]
+    
+    return mainLobe
