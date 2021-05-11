@@ -46,6 +46,8 @@ values are M = 1101, N = 2048, fEst = 1000.02 and the freqency estimation error 
 Test case 3: If you run your code with inputFile = '../../sounds/sine-200.wav', f = 200.0 Hz, the optimal
 values are M = 1201, N = 2048, fEst = 200.038 and the freqency estimation error is 0.038.
 """
+def next_power_of_2(x):
+    return 1 if x == 0 else 2**(x-1).bit_length()
 def minFreqEstErr(inputFile, f):
     """
     Inputs:
@@ -59,10 +61,51 @@ def minFreqEstErr(inputFile, f):
     # analysis parameters:
     window = 'blackman'
     t = -40
+    thresholdForError = 0.05
     
-    ### Your code here
+    # Your code here
     #read file
     fs, x = UF.wavread(inputFile)
+    #determine the sampe that is at 0.5 seconds into the sounds
+    timeStamp = 0.5                                             #  The timestamp where to center our windowed signal around
+    binAtTimeStamp = int(timeStamp*fs)           #Bin number at the timestamp
+    
+    #set range for k 
+    k_range = np.arange(1, (x.size-1)/100)
+    
+    # initialize fft size N (minimum window size)
+    N = 100*1+1
+    fEst = 0
+    #Iterate through range of M_Range
+    for k in k_range :
+        M = 100*k +1
+        
+        x1 = x[binAtTimeStamp-M/2 : binAtTimeStamp + M/2+1 ]   #get x1 as M no. samples of x centered around timeStamp
+        
+        w = get_window(window, M)                                                    #get window (<window>, <size of M>)
+        N = next_power_of_2(M)                                                         #get FFT size as a power of 2, and greater than M
+        mX, pX = DFT.dftAnal(x1, w, N)
+        ploc = UF.peakDetection(mX, t)
+        iploc, _, _ = UF.peakInterp(mX, pX, ploc)
+        peakInHz = iploc*fs/float(N)
+        if (abs(peakInHz - f) < thresholdForError) :
+            return float(peakInHz), M, N
+        else: 
+            continue       
+        
+    
+    return float(fEst), int(M), int(N)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
