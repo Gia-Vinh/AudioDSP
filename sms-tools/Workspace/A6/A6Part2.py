@@ -101,18 +101,52 @@ def segmentStableNotesRegions(inputFile = '../../sounds/sax-phrase-short.wav', s
     ### your code here
 
     # 1. convert f0 values from Hz to Cents (as described in pdf document)
+    f0[np.where(f0<eps)] = eps
+    f0Cent = 1200 * np.log2(f0 / 55.0)
 
     #2. create an array containing standard deviation of last winStable samples
+    devf0 = np.zeros(f0Cent.size)
+    for i in range(winStable, f0Cent.size):
+        devf0[i] = np.std(f0Cent[i-winStable:i])
+    
 
     #3. apply threshold on standard deviation values to find indexes of the stable points in melody
+    stablePts = np.where(devf0<stdThsld)[0]
 
     #4. create segments of continuous stable points such that consecutive stable points belong to same segment
+    segmentsList = np.array([[]], dtype = int).reshape(0,2)          #list of stable segment
+    isConsecutive = False                       #create a flag to check consecutivity between stable node
+    stbSegment_start = 0                        #initialize start and end indexes for stable segment
+    stbSegment_end = 0
     
+    for i in range(0,stablePts.size-1):            #iterate through stablePts until 2nd last element, look for consecutive point
+        if (isConsecutive == False):                    #if not already in consecutive stable region, check for it
+            if (stablePts[i+1] - stablePts[i] == 1):          #if true, this is the start of a new consecutive stable region
+                stbSegment_start = stablePts[i]                 #update segment starting point
+                isConsecutive = True
+                continue
+            else:                                                    #if false,still in a non - consecutive region
+                continue
+        
+        else: #isConsecutive == True                #already in a consecutive stable region, check for the end
+            if (stablePts[i+1] - stablePts[i] == 1):          #if true, we are still in the same consecutive stable region
+                continue
+            else:                                                 #if false, reached the end of the the consecutive stable region
+                stbSegment_end = stablePts[i]   #update segment ending point
+                isConsecutive = False
+                #append the starting and ending point of the segment to the segment list
+                segmentsList = np.vstack([segmentsList, np.array([[stbSegment_start, stbSegment_end]])])
+    
+    if (isConsecutive == True): #that means the final stale region runs until the end of stablePts
+        segmentsList = np.vstack([segmentsList, np.array([[stbSegment_start, stablePts[-1] ]])])
     #5. apply segment filtering, i.e. remove segments with are < minNoteDur in length
+    # To convert from minNoteDur [s] to frame index: frame index = minNoteDur*fs/H
+    segmentsList = np.delete(segmentsList, np.where(segmentsList[:,1 ] - segmentsList[:,0] < (minNoteDur*fs)/H), axis = 0)
     
-    # plotSpectogramF0Segments(x, fs, w, N, H, f0, segments)  # Plot spectrogram and F0 if needed
+    
+    #plotSpectogramF0Segments(x, fs, w, N, H, f0, segmentsList)  # Plot spectrogram and F0 if needed
 
-    # return segments
+    return segmentsList
 
 
 def plotSpectogramF0Segments(x, fs, w, N, H, f0, segments):
